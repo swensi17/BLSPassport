@@ -41,36 +41,38 @@ def print_warning(text):
 def check_node():
     """Проверка установки Node.js"""
     try:
-        result = subprocess.run(['node', '--version'], capture_output=True, text=True, shell=True)
-        version = result.stdout.strip()
-        print_success(f"Node.js установлен: {version}")
-        return True
+        result = subprocess.run(['node', '--version'], capture_output=True, text=True, check=False)
+        version = (result.stdout or result.stderr).strip()
+        if result.returncode == 0 and version:
+            print_success(f"Node.js установлен: {version}")
+            return True
+        raise FileNotFoundError
     except FileNotFoundError:
-        print_error("Node.js не установлен!")
-        print_info("Установите Node.js с https://nodejs.org/")
+        print_error("Node.js не установлен или недоступен в PATH!")
+        print_info("Установите Node.js с https://nodejs.org/ и откройте новый терминал")
         return False
 
 def check_package_manager():
     """Проверка установки пакетного менеджера"""
     # Проверяем pnpm
     try:
-        result = subprocess.run(['pnpm', '--version'], capture_output=True, text=True, shell=True)
-        if result.returncode == 0 and result.stdout.strip():
-            version = result.stdout.strip()
+        result = subprocess.run(['pnpm', '--version'], capture_output=True, text=True, check=False)
+        version = (result.stdout or result.stderr).strip()
+        if result.returncode == 0 and version:
             print_success(f"pnpm установлен: {version}")
             return 'pnpm'
-    except:
+    except FileNotFoundError:
         pass
     
     # Проверяем npm
     try:
-        result = subprocess.run(['npm', '--version'], capture_output=True, text=True, shell=True)
-        if result.returncode == 0 and result.stdout.strip():
-            version = result.stdout.strip()
+        result = subprocess.run(['npm', '--version'], capture_output=True, text=True, check=False)
+        version = (result.stdout or result.stderr).strip()
+        if result.returncode == 0 and version:
             print_success(f"npm установлен: {version}")
             print_info("Используем npm (pnpm не найден)")
             return 'npm'
-    except:
+    except FileNotFoundError:
         pass
     
     print_error("Ни pnpm, ни npm не установлены!")
@@ -83,7 +85,11 @@ def install_dependencies(pm):
     if not Path('node_modules').exists():
         print_info("Устанавливаю зависимости (это может занять несколько минут)...")
         try:
-            subprocess.run(f'{pm} install --legacy-peer-deps', check=True, shell=True)
+            if pm == 'pnpm':
+                cmd = [pm, 'install']
+            else:
+                cmd = [pm, 'install', '--legacy-peer-deps']
+            subprocess.run(cmd, check=True)
             print_success("Зависимости установлены")
         except subprocess.CalledProcessError:
             print_error("Ошибка при установке зависимостей")
@@ -135,7 +141,7 @@ def run_web(pm):
     print_info("Для остановки нажмите Ctrl+C\n")
     
     try:
-        subprocess.run(f'{pm} run web', shell=True)
+        subprocess.run([pm, 'run', 'web'])
     except KeyboardInterrupt:
         print_info("\nПриложение остановлено")
 
@@ -146,7 +152,7 @@ def run_android(pm):
     print_info("Для остановки нажмите Ctrl+C\n")
     
     try:
-        subprocess.run(f'{pm} run android', shell=True)
+        subprocess.run([pm, 'run', 'android'])
     except KeyboardInterrupt:
         print_info("\nПриложение остановлено")
 
@@ -161,7 +167,7 @@ def run_ios(pm):
     print_info("Для остановки нажмите Ctrl+C\n")
     
     try:
-        subprocess.run(f'{pm} run ios', shell=True)
+        subprocess.run([pm, 'run', 'ios'])
     except KeyboardInterrupt:
         print_info("\nПриложение остановлено")
 
@@ -172,7 +178,7 @@ def run_expo(pm):
     print_info("Для остановки нажмите Ctrl+C\n")
     
     try:
-        subprocess.run(f'{pm} start', shell=True)
+        subprocess.run([pm, 'start'])
     except KeyboardInterrupt:
         print_info("\nПриложение остановлено")
 
