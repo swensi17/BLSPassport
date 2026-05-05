@@ -21,7 +21,8 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "favicon": "./assets/images/logo.png",
+      "baseUrl": "/BLSPassport"
     },
     "plugins": [
       "expo-router",
